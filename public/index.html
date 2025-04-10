@@ -1,43 +1,32 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>Snake Online</title>
+  <meta charset="UTF-8" />
+  <title>Mini Slither.io</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    body {
-      background: #111;
+    body, html { margin: 0; padding: 0; overflow: hidden; background: #111; }
+    canvas { display: block; }
+    #ui {
+      position: absolute;
+      top: 10px;
+      left: 10px;
       color: white;
-      text-align: center;
-      font-family: Arial;
-    }
-    canvas {
-      background: black;
-      display: block;
-      margin: auto;
-      width: 100%;
-      max-width: 600px;
-    }
-    button {
-      margin-top: 15px;
-      padding: 10px 20px;
-      font-size: 16px;
+      font-family: sans-serif;
+      z-index: 10;
     }
   </style>
 </head>
 <body>
-  <h1>🐍 Snake Multijugador</h1>
-  <canvas id="game" width="600" height="600"></canvas>
-  <br>
-  <button onclick="compartir()">🔗 Compartir</button>
+  <div id="ui">
+    <input id="nameInput" placeholder="Tu nombre" />
+    <button onclick="setName()">Jugar</button>
+    <div id="score"></div>
+    <div id="leaderboard"></div>
+  </div>
+  <canvas id="game"></canvas>
 
   <script src="/socket.io/socket.io.js"></script>
   <script src="game.js"></script>
-  <script>
-    function compartir() {
-      navigator.clipboard.writeText(window.location.href);
-      alert("¡Link copiado! Pegalo donde quieras 😎");
-    }
-  </script>
 </body>
 </html>

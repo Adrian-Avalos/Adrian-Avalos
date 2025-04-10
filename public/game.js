@@ -1,59 +1,72 @@
-const socket = io();
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
-const tileSize = 20;
-let playerId;
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+const socket = io();
+let playerId = null;
 let players = {};
-let fruit = {}, bomb = {}, boost = {};
+let food = [];
+let leaderboard = [];
 
-socket.on('init', (data) => {
-  playerId = data.id;
-  players = data.players;
-  fruit = data.fruit;
-  bomb = data.bomb;
-  boost = data.boost;
+document.addEventListener('mousemove', (e) => {
+  const angle = Math.atan2(e.clientY - canvas.height / 2, e.clientX - canvas.width / 2);
+  socket.emit('move', { angle });
 });
 
-socket.on('new-player', ({ id, data }) => {
-  players[id] = data;
-});
-
-socket.on('remove-player', (id) => {
-  delete players[id];
-});
+function setName() {
+  const name = document.getElementById('nameInput').value;
+  socket.emit('setName', name);
+}
 
 socket.on('state', (data) => {
   players = data.players;
-  fruit = data.fruit;
-  bomb = data.bomb;
-  boost = data.boost;
+  food = data.food;
+  leaderboard = data.leaderboard;
   draw();
 });
 
-document.addEventListener('keydown', (e) => {
-  const dirs = {
-    ArrowUp: [0, -1], ArrowDown: [0, 1],
-    ArrowLeft: [-1, 0], ArrowRight: [1, 0]
-  };
-  if (dirs[e.key]) {
-    socket.emit('move', { dx: dirs[e.key][0], dy: dirs[e.key][1] });
-  }
-});
-
-function drawTile(pos, color) {
-  ctx.fillStyle = color;
-  ctx.fillRect(pos.x * tileSize, pos.y * tileSize, tileSize, tileSize);
-}
-
 function draw() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  drawTile(fruit, 'lime');
-  drawTile(bomb, 'red');
-  drawTile(boost, 'cyan');
+  ctx.fillStyle = '#111';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  Object.values(players).forEach(p => {
-    if (!p.alive) return;
-    ctx.fillStyle = p.color;
-    p.tail.forEach(part => drawTile(part, p.color));
+  const me = players[socket.id];
+  if (!me) return;
+
+  const camX = me.x - canvas.width / 2;
+  const camY = me.y - canvas.height / 2;
+
+  // Dibujar comida
+  food.forEach(f => {
+    ctx.fillStyle = f.color;
+    ctx.beginPath();
+    ctx.arc(f.x - camX, f.y - camY, 5, 0, Math.PI * 2);
+    ctx.fill();
   });
+
+  // Dibujar serpientes
+  Object.values(players).forEach(p => {
+    ctx.strokeStyle = p.color;
+    ctx.lineWidth = 10;
+    ctx.beginPath();
+    p.tail.forEach((t, i) => {
+      if (i === 0) {
+        ctx.moveTo(t.x - camX, t.y - camY);
+      } else {
+        ctx.lineTo(t.x - camX, t.y - camY);
+      }
+    });
+    ctx.stroke();
+
+    // Nombre
+    ctx.fillStyle = 'white';
+    ctx.font = '12px Arial';
+    ctx.fillText(p.name, p.x - camX - 15, p.y - camY - 10);
+  });
+
+  // Score
+  document.getElementById('score').innerText = `Puntaje: ${me.score}`;
+
+  // Leaderboard
+  document.getElementById('leaderboard').innerHTML = '<b>Ranking:</b><br>' + leaderboard.map(p => `${p.name}: ${p.score}`).join('<br>');
 }

@@ -2,19 +2,11 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <title>Slither.io PRO</title>
+  <title>Slither.io Ultra</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
-    body, html {
-      margin: 0;
-      padding: 0;
-      overflow: hidden;
-      background: #111;
-      font-family: sans-serif;
-    }
-    canvas {
-      display: block;
-    }
+    body, html { margin: 0; padding: 0; overflow: hidden; background: #111; font-family: sans-serif; }
+    canvas { display: block; }
     #ui {
       position: absolute;
       top: 10px;
@@ -22,43 +14,24 @@
       z-index: 10;
       color: white;
     }
-    #touch-controls {
-      position: absolute;
-      bottom: 10px;
-      left: 50%;
-      transform: translateX(-50%);
-      display: flex;
-      gap: 10px;
-      z-index: 11;
-    }
-    .touch-btn {
-      width: 60px;
-      height: 60px;
-      font-size: 24px;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.2);
-      color: white;
-      border: none;
-    }
   </style>
 </head>
 <body>
   <div id="ui">
     <input id="name" placeholder="Tu nombre" />
+    <select id="emoji">
+      <option>🐍</option>
+      <option>😎</option>
+      <option>🦖</option>
+      <option>🐸</option>
+      <option>👾</option>
+    </select>
     <button onclick="setName()">Jugar</button>
+    <button id="turboBtn" onmousedown="turbo(true)" onmouseup="turbo(false)">⚡ TURBO</button>
     <div id="score"></div>
     <div id="leaderboard"></div>
   </div>
-
-  <div id="touch-controls">
-    <button class="touch-btn" onclick="moveDir(-Math.PI)">⬅️</button>
-    <button class="touch-btn" onclick="moveDir(-Math.PI/2)">⬆️</button>
-    <button class="touch-btn" onclick="moveDir(Math.PI/2)">⬇️</button>
-    <button class="touch-btn" onclick="moveDir(0)">➡️</button>
-  </div>
-
   <canvas id="game"></canvas>
-  <audio id="eat-sound" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_e9f3bbfdfc.mp3?filename=video-game-power-up-38248.mp3"></audio>
   <script src="/socket.io/socket.io.js"></script>
   <script src="game.js"></script>
 </body>

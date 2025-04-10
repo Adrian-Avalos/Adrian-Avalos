@@ -4,11 +4,9 @@ canvas.width = innerWidth;
 canvas.height = innerHeight;
 
 const socket = io();
-let players = {};
-let food = [];
-let leaderboard = [];
-let topId = null;
-let deathEffects = [];
+let players = {}, food = [], leaderboard = [], topId = null, deathEffects = [];
+let zoom = 1;
+function lerp(a, b, t) { return a + (b - a) * t; }
 
 let turboActive = false;
 function turbo(state) {
@@ -41,7 +39,8 @@ function draw() {
   if (!me) return;
 
   const MAP_SIZE = 3000;
-  const zoom = 1 + (me.score / 300);
+  const targetZoom = 1 + (me.score / 300);
+  zoom = lerp(zoom, targetZoom, 0.1);
   ctx.save();
   ctx.scale(1 / zoom, 1 / zoom);
 
@@ -67,7 +66,6 @@ function draw() {
 
   Object.values(players).forEach(p => {
     const isTop = p.id === topId;
-
     for (let i = 0; i < p.tail.length; i++) {
       const seg = p.tail[i];
       const x = seg.x - camX;
@@ -76,13 +74,11 @@ function draw() {
       grad.addColorStop(0, "white");
       grad.addColorStop(0.3, p.color);
       grad.addColorStop(1, "#000");
-
       ctx.fillStyle = grad;
       ctx.beginPath();
       ctx.arc(x, y, isTop ? 12 : 8, 0, Math.PI * 2);
       ctx.fill();
     }
-
     ctx.font = "20px Arial";
     ctx.fillText(p.emoji || "🐍", p.x - camX - 10, p.y - camY + 8);
     ctx.fillStyle = "white";
@@ -112,7 +108,6 @@ function draw() {
   ctx.arc(mapX, mapY, radius, 0, Math.PI * 2);
   ctx.fillStyle = "#222";
   ctx.fill();
-
   Object.values(players).forEach(p => {
     const dotX = mapX + (p.x / MAP_SIZE) * radius;
     const dotY = mapY + (p.y / MAP_SIZE) * radius;
@@ -124,11 +119,41 @@ function draw() {
 
   const level = Math.floor(me.score / 50) + 1;
   localStorage.setItem("slither-score", me.score.toFixed(1));
-
-  document.getElementById("score").innerText =
-    `Puntaje: ${me.score.toFixed(1)} | Nivel: ${level}`;
-
+  document.getElementById("score").innerText = `Puntaje: ${me.score.toFixed(1)} | Nivel: ${level}`;
   document.getElementById("leaderboard").innerHTML =
     "<b>Ranking:</b><br>" +
     leaderboard.map((p, i) => `${i === 0 ? '👑' : ''} ${p.name}: ${p.score.toFixed(0)}`).join("<br>");
 }
+
+// 🕹️ Joystick
+const joyArea = document.getElementById("joystick-area");
+const joyHandle = document.getElementById("joystick-handle");
+
+let dragging = false;
+let center = { x: 0, y: 0 };
+
+joyArea.addEventListener("pointerdown", e => {
+  dragging = true;
+  const rect = joyArea.getBoundingClientRect();
+  center = {
+    x: rect.left + rect.width / 2,
+    y: rect.top + rect.height / 2
+  };
+});
+
+document.addEventListener("pointerup", () => {
+  dragging = false;
+  joyHandle.style.left = "30px";
+  joyHandle.style.top = "30px";
+});
+
+document.addEventListener("pointermove", e => {
+  if (!dragging) return;
+  const dx = e.clientX - center.x;
+  const dy = e.clientY - center.y;
+  const angle = Math.atan2(dy, dx);
+  const dist = Math.min(30, Math.hypot(dx, dy));
+  joyHandle.style.left = `${30 + Math.cos(angle) * dist}px`;
+  joyHandle.style.top = `${30 + Math.sin(angle) * dist}px`;
+  socket.emit("move", angle);
+});

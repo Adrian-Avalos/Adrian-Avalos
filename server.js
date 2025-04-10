@@ -6,19 +6,20 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
+// 👇 Esta línea es clave para evitar "Cannot GET /"
 app.use(express.static('public'));
 
 const players = {};
-let fruit = getRandomPos();
-let bomb = getRandomPos();
-let speedBoost = getRandomPos();
+let fruit = randomPos();
+let bomb = randomPos();
+let boost = randomPos();
 
-function getRandomPos() {
+function randomPos() {
   return { x: Math.floor(Math.random() * 30), y: Math.floor(Math.random() * 30) };
 }
 
 io.on('connection', (socket) => {
-  console.log('Nuevo jugador conectado:', socket.id);
+  console.log('Jugador conectado:', socket.id);
 
   players[socket.id] = {
     x: Math.floor(Math.random() * 30),
@@ -26,9 +27,9 @@ io.on('connection', (socket) => {
     dx: 1,
     dy: 0,
     tail: [],
-    color: '#' + Math.floor(Math.random()*16777215).toString(16),
-    speed: 150,
-    alive: true
+    color: '#' + Math.floor(Math.random() * 16777215).toString(16),
+    alive: true,
+    speed: 100
   };
 
   socket.emit('init', {
@@ -36,16 +37,16 @@ io.on('connection', (socket) => {
     players,
     fruit,
     bomb,
-    speedBoost
+    boost
   });
 
   socket.broadcast.emit('new-player', { id: socket.id, data: players[socket.id] });
 
-  socket.on('move', (data) => {
+  socket.on('move', ({ dx, dy }) => {
     const p = players[socket.id];
     if (p && p.alive) {
-      p.dx = data.dx;
-      p.dy = data.dy;
+      p.dx = dx;
+      p.dy = dy;
     }
   });
 
@@ -66,29 +67,38 @@ setInterval(() => {
     p.tail.push({ x: p.x, y: p.y });
     if (p.tail.length > 10) p.tail.shift();
 
-    // Fruta
+    // Colisiones
     if (p.x === fruit.x && p.y === fruit.y) {
       p.tail.push({});
-      fruit = getRandomPos();
+      fruit = randomPos();
     }
 
-    // Bomba
     if (p.x === bomb.x && p.y === bomb.y) {
       p.alive = false;
     }
 
-    // Power-up velocidad
-    if (p.x === speedBoost.x && p.y === speedBoost.y) {
-      p.speed = 75;
-      setTimeout(() => { p.speed = 150 }, 5000);
-      speedBoost = getRandomPos();
+    if (p.x === boost.x && p.y === boost.y) {
+      p.speed = 50;
+      setTimeout(() => { p.speed = 100; }, 5000);
+      boost = randomPos();
     }
 
-    // Límites del mapa
+    // Límite del mapa
     if (p.x < 0 || p.y < 0 || p.x >= 30 || p.y >= 30) {
       p.alive = false;
     }
   }
 
-  io.emit('state', { players, fruit, bomb, speedBoost });
+  io.emit('state', {
+    players,
+    fruit,
+    bomb,
+    boost
+  });
 }, 100);
+
+// 🔥 Puerto dinámico para Render
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+  console.log(`Servidor corriendo en el puerto ${PORT}`);
+});

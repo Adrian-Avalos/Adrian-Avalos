@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <title>Slither.io Ultra</title>
+  <title>Slither.io Ultra PRO</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     body, html { margin: 0; padding: 0; overflow: hidden; background: #111; font-family: sans-serif; }
@@ -19,20 +19,62 @@
 <body>
   <div id="ui">
     <input id="name" placeholder="Tu nombre" />
-    <select id="emoji">
-      <option>🐍</option>
-      <option>😎</option>
-      <option>🦖</option>
-      <option>🐸</option>
-      <option>👾</option>
-    </select>
+    <select id="emoji"></select>
     <button onclick="setName()">Jugar</button>
-    <button id="turboBtn" onmousedown="turbo(true)" onmouseup="turbo(false)">⚡ TURBO</button>
+    <button id="turboBtn" onpointerdown="turbo(true)" onpointerup="turbo(false)">⚡ TURBO</button>
     <div id="score"></div>
     <div id="leaderboard"></div>
   </div>
+
   <canvas id="game"></canvas>
   <script src="/socket.io/socket.io.js"></script>
   <script src="game.js"></script>
+
+  <script>
+    function setName() {
+      const name = document.getElementById("name").value;
+      const emoji = document.getElementById("emoji").value;
+
+      localStorage.setItem("slither-name", name);
+      localStorage.setItem("slither-emoji", emoji);
+
+      socket.emit("setName", { name, emoji });
+    }
+
+    function loadEmojiOptions() {
+      const unlocked = [
+        { emoji: "🐍", level: 1 },
+        { emoji: "😎", level: 2 },
+        { emoji: "🐸", level: 3 },
+        { emoji: "🦖", level: 5 },
+        { emoji: "👾", level: 8 },
+        { emoji: "🐉", level: 10 }
+      ];
+
+      const emojiSelect = document.getElementById("emoji");
+      emojiSelect.innerHTML = "";
+
+      const score = parseFloat(localStorage.getItem("slither-score") || "0");
+      const level = Math.floor(score / 50) + 1;
+
+      unlocked.forEach(opt => {
+        if (level >= opt.level) {
+          const option = document.createElement("option");
+          option.value = opt.emoji;
+          option.textContent = `${opt.emoji} (Nivel ${opt.level})`;
+          emojiSelect.appendChild(option);
+        }
+      });
+    }
+
+    window.onload = () => {
+      const savedName = localStorage.getItem("slither-name");
+      const savedEmoji = localStorage.getItem("slither-emoji");
+
+      if (savedName) document.getElementById("name").value = savedName;
+      loadEmojiOptions();
+      if (savedEmoji) document.getElementById("emoji").value = savedEmoji;
+    };
+  </script>
 </body>
 </html>

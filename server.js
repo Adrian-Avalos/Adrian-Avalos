@@ -42,7 +42,7 @@ io.on("connection", (socket) => {
 
   socket.on("setName", ({ name, emoji }) => {
     if (players[socket.id]) {
-      players[socket.id].name = name;
+      players[socket.id].name = name || "Jugador";
       players[socket.id].emoji = emoji || "🐍";
     }
   });
@@ -67,6 +67,7 @@ io.on("connection", (socket) => {
 function killPlayer(p) {
   deathEffects.push({ x: p.x, y: p.y, color: p.color, time: Date.now() });
 
+  // Genera comida al morir
   for (let i = 0; i < p.score; i += 5) {
     food.push({
       x: p.x + Math.random() * 40 - 20,
@@ -75,6 +76,7 @@ function killPlayer(p) {
     });
   }
 
+  // Reiniciar jugador
   p.tail = [];
   p.score = 0;
   p.x = Math.random() * MAP_SIZE - MAP_SIZE / 2;
@@ -96,11 +98,21 @@ setInterval(() => {
 
     p.x += Math.cos(p.angle) * speed;
     p.y += Math.sin(p.angle) * speed;
-    p.x = Math.max(Math.min(p.x, MAP_SIZE / 2), -MAP_SIZE / 2);
-    p.y = Math.max(Math.min(p.y, MAP_SIZE / 2), -MAP_SIZE / 2);
+
+    // 💀 Si toca el borde, muere
+    if (
+      p.x < -MAP_SIZE / 2 || p.x > MAP_SIZE / 2 ||
+      p.y < -MAP_SIZE / 2 || p.y > MAP_SIZE / 2
+    ) {
+      killPlayer(p);
+      continue;
+    }
+
+    // Avanza y guarda cola
     p.tail.push({ x: p.x, y: p.y });
     if (p.tail.length > 100 + p.score) p.tail.shift();
 
+    // Comer comida
     for (let i = 0; i < food.length; i++) {
       const f = food[i];
       const dx = p.x - f.x;
@@ -113,10 +125,12 @@ setInterval(() => {
       }
     }
 
+    // Colisiones entre jugadores
     for (const otherId in players) {
       const other = players[otherId];
       if (otherId === id || !other.alive) continue;
 
+      // Colisión con cola
       for (const part of other.tail) {
         const dx = p.x - part.x;
         const dy = p.y - part.y;
@@ -125,6 +139,7 @@ setInterval(() => {
         }
       }
 
+      // Colisión cabeza contra cabeza
       const dx = p.x - other.x;
       const dy = p.y - other.y;
       if (Math.sqrt(dx * dx + dy * dy) < 10) {
@@ -134,12 +149,19 @@ setInterval(() => {
     }
   }
 
+  // Ranking
   const sorted = Object.values(players).filter(p => p.alive).sort((a, b) => b.score - a.score);
   const topId = sorted.length > 0 ? sorted[0].id : null;
   const leaderboard = sorted.slice(0, 5);
 
-  io.emit("state", { players, food, leaderboard, topId, deathEffects });
+  io.emit("state", {
+    players,
+    food,
+    leaderboard,
+    topId,
+    deathEffects
+  });
 }, 50);
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log("Servidor corriendo en el puerto", PORT));
+server.listen(PORT, () => console.log("✅ Servidor corriendo en el puerto", PORT));

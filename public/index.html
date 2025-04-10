@@ -1,27 +1,42 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <title>Snake Online con Power-Ups</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <title>Snake Online</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    body { background: #111; color: white; text-align: center; font-family: sans-serif; }
-    canvas { background: black; display: block; margin: auto; width: 100%; max-width: 600px; }
-    button { margin-top: 10px; padding: 10px 20px; font-size: 1rem; cursor: pointer; }
+    body {
+      background: #111;
+      color: white;
+      text-align: center;
+      font-family: Arial;
+    }
+    canvas {
+      background: black;
+      display: block;
+      margin: auto;
+      width: 100%;
+      max-width: 600px;
+    }
+    button {
+      margin-top: 15px;
+      padding: 10px 20px;
+      font-size: 16px;
+    }
   </style>
 </head>
 <body>
-  <h1>🐍 Snake Online</h1>
+  <h1>🐍 Snake Multijugador</h1>
   <canvas id="game" width="600" height="600"></canvas>
   <br>
-  <button onclick="compartir()">🔗 Compartir con amigos</button>
+  <button onclick="compartir()">🔗 Compartir</button>
 
   <script src="/socket.io/socket.io.js"></script>
   <script src="game.js"></script>
   <script>
     function compartir() {
       navigator.clipboard.writeText(window.location.href);
-      alert("¡Link copiado! Pegalo donde quieras 😄");
+      alert("¡Link copiado! Pegalo donde quieras 😎");
     }
   </script>
 </body>

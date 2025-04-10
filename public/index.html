@@ -1,13 +1,16 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>Snake Online</title>
+  <meta charset="UTF-8" />
+  <title>Snake con Power-Ups</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    canvas { background: #000; display: block; margin: auto; }
+    canvas { background: #000; display: block; margin: auto; width: 100%; max-width: 600px; }
+    body { background: #111; color: white; font-family: sans-serif; text-align: center; }
   </style>
 </head>
 <body>
+  <h1>🐍 Snake con Power-Ups</h1>
   <canvas id="game" width="600" height="600"></canvas>
   <script src="/socket.io/socket.io.js"></script>
   <script src="game.js"></script>

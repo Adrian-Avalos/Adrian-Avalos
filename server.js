@@ -5,21 +5,21 @@ const { Server } = require('socket.io');
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
+
 app.use(express.static('public'));
 
 const players = {};
-let fruit = getRandomPosition();
-let bomb = getRandomPosition();
-let speedBoost = getRandomPosition();
+let fruit = getRandomPos();
+let bomb = getRandomPos();
+let speedBoost = getRandomPos();
 
-function getRandomPosition() {
-  return {
-    x: Math.floor(Math.random() * 30),
-    y: Math.floor(Math.random() * 30)
-  };
+function getRandomPos() {
+  return { x: Math.floor(Math.random() * 30), y: Math.floor(Math.random() * 30) };
 }
 
 io.on('connection', (socket) => {
+  console.log('Nuevo jugador conectado:', socket.id);
+
   players[socket.id] = {
     x: Math.floor(Math.random() * 30),
     y: Math.floor(Math.random() * 30),
@@ -42,13 +42,15 @@ io.on('connection', (socket) => {
   socket.broadcast.emit('new-player', { id: socket.id, data: players[socket.id] });
 
   socket.on('move', (data) => {
-    if (players[socket.id] && players[socket.id].alive) {
-      players[socket.id].dx = data.dx;
-      players[socket.id].dy = data.dy;
+    const p = players[socket.id];
+    if (p && p.alive) {
+      p.dx = data.dx;
+      p.dy = data.dy;
     }
   });
 
   socket.on('disconnect', () => {
+    console.log('Jugador desconectado:', socket.id);
     delete players[socket.id];
     io.emit('remove-player', socket.id);
   });
@@ -64,34 +66,29 @@ setInterval(() => {
     p.tail.push({ x: p.x, y: p.y });
     if (p.tail.length > 10) p.tail.shift();
 
-    // Colisión con fruta
+    // Fruta
     if (p.x === fruit.x && p.y === fruit.y) {
-      p.tail.push({}); // más largo
-      fruit = getRandomPosition();
+      p.tail.push({});
+      fruit = getRandomPos();
     }
 
-    // Colisión con bomba
+    // Bomba
     if (p.x === bomb.x && p.y === bomb.y) {
       p.alive = false;
     }
 
-    // Colisión con power-up de velocidad
+    // Power-up velocidad
     if (p.x === speedBoost.x && p.y === speedBoost.y) {
       p.speed = 75;
       setTimeout(() => { p.speed = 150 }, 5000);
-      speedBoost = getRandomPosition();
+      speedBoost = getRandomPos();
     }
 
-    // Limites del canvas
-    if (p.x < 0 || p.y < 0 || p.x > 29 || p.y > 29) {
+    // Límites del mapa
+    if (p.x < 0 || p.y < 0 || p.x >= 30 || p.y >= 30) {
       p.alive = false;
     }
   }
 
-  io.emit('state', {
-    players,
-    fruit,
-    bomb,
-    speedBoost
-  });
+  io.emit('state', { players, fruit, bomb, speedBoost });
 }, 100);

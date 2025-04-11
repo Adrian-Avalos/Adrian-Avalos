@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Ubicación en Tiempo Real</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #f3f3f3;
+    }
+    #map {
+      height: 400px;
+      margin-top: 20px;
+    }
+    .box {
+      margin-bottom: 10px;
+    }
+  </style>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+</head>
+<body>
+  <h1>Ubicación en Tiempo Real entre Amigos</h1>
+
+  <div class="box">
+    <button id="startShare">📡 Compartir mi ubicación</button><br>
+    Tu ID: <span id="myId">---</span>
+  </div>
+
+  <div class="box">
+    <input type="text" id="friendId" placeholder="ID del amigo">
+    <button id="viewFriend">👀 Ver ubicación de amigo</button>
+  </div>
+
+  <div id="map"></div>
+
+  <script>
+    const peer = new Peer();
+    let conn;
+    let marker;
+    let map = L.map('map').setView([0, 0], 2);
+    let myMarker;
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 18
+    }).addTo(map);
+
+    peer.on('open', id => {
+      document.getElementById('myId').textContent = id;
+    });
+
+    document.getElementById('startShare').addEventListener('click', () => {
+      peer.on('connection', c => {
+        conn = c;
+        conn.on('open', () => {
+          navigator.geolocation.watchPosition(pos => {
+            const coords = {
+              lat: pos.coords.latitude,
+              lng: pos.coords.longitude
+            };
+            conn.send(coords);
+            if (!myMarker) {
+              myMarker = L.marker([coords.lat, coords.lng]).addTo(map).bindPopup("Mi ubicación").openPopup();
+              map.setView([coords.lat, coords.lng], 15);
+            } else {
+              myMarker.setLatLng([coords.lat, coords.lng]);
+            }
+          }, err => {
+            alert("No se pudo obtener la ubicación");
+          }, {
+            enableHighAccuracy: true
+          });
+        });
+      });
+    });
+
+    document.getElementById('viewFriend').addEventListener('click', () => {
+      const friendId = document.getElementById('friendId').value;
+      if (!friendId) {
+        alert("Ingresá un ID válido");
+        return;
+      }
+
+      conn = peer.connect(friendId);
+      conn.on('data', data => {
+        if (!marker) {
+          marker = L.marker([data.lat, data.lng]).addTo(map).bindPopup("Ubicación de tu amigo").openPopup();
+          map.setView([data.lat, data.lng], 15);
+        } else {
+          marker.setLatLng([data.lat, data.lng]);
+        }
+      });
+    });
+  </script>
+</body>
+</html>
